@@ -46,7 +46,7 @@ public class MvcApiResource {
 		DocumentationEndPoint endPoint = new DocumentationEndPoint(documentationUri,getApiDescription());
 		return endPoint;
 	}
-	
+
 	private String getListingPath() {
 		Api apiAnnotation = controllerClass.getAnnotation(Api.class);
 		if (apiAnnotation == null || apiAnnotation.listingPath().equals(""))
@@ -59,21 +59,21 @@ public class MvcApiResource {
 		String resourcePath = getControllerUri();
 		if (resourcePath == null)
 			return null;
-		
+
 		return configuration.newDocumentation(this);
 	}
-	
+
 	private String getApiDescription()
 	{
 		Api apiAnnotation = controllerClass.getAnnotation(Api.class);
 		if (apiAnnotation == null)
 			return null;
 		return apiAnnotation.description();
-		
+
 	}
-    
-	public String getControllerUri() 
-	{ 
+
+	public String getControllerUri()
+	{
 		String requestUri = resolveRequestUri(controllerClass);
 		if (requestUri == null)
 		{
@@ -90,7 +90,7 @@ public class MvcApiResource {
 		}
 		return requestUri;
 	}
-    
+
 	protected String resolveRequestUri(AnnotatedElement annotatedElement)
 	{
 		RequestMapping requestMapping = annotatedElement.getAnnotation( RequestMapping.class );
@@ -112,7 +112,7 @@ public class MvcApiResource {
 		}
 		return requestUris[0];
 	}
-	
+
 	@Override
 	public String toString()
 	{
@@ -127,5 +127,9 @@ public class MvcApiResource {
 		return controllerClass == DocumentationController.class;
 	}
 
-	
+	public boolean isDocumentable() {
+		return controllerClass.getAnnotation(Api.class) != null;
+	}
+
+
 }

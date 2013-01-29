@@ -31,16 +31,16 @@ public class MvcApiReader {
 	private final SwaggerConfiguration config;
 	@Getter
 	private Map<String, HandlerMapping> handlerMappingBeans;
-	
+
 	@Getter
 	private Documentation resourceListing;
-	
+
 	private final Map<Class<?>,DocumentationEndPoint> resourceListCache = Maps.newHashMap();
 	private final Map<Class<?>,ControllerDocumentation> apiCache = Maps.newHashMap();
-    
-	private static final List<RequestMethod> allRequestMethods = 
+
+	private static final List<RequestMethod> allRequestMethods =
 			Arrays.asList( RequestMethod.GET, RequestMethod.DELETE, RequestMethod.POST, RequestMethod.PUT );
-	
+
 	public MvcApiReader(WebApplicationContext context, SwaggerConfiguration swaggerConfiguration)
 	{
 		this.context = context;
@@ -48,10 +48,10 @@ public class MvcApiReader {
 		handlerMappingBeans = BeanFactoryUtils.beansOfTypeIncludingAncestors(this.context, HandlerMapping.class, true, false);
 		buildMappingDocuments();
 	}
-	
+
 	private void buildMappingDocuments() {
 		resourceListing = config.newDocumentation();
-		
+
 		log.debug("Discovered {} candidates for documentation",handlerMappingBeans.size());
 		for (HandlerMapping handlerMapping : handlerMappingBeans.values())
 		{
@@ -68,7 +68,7 @@ public class MvcApiReader {
 			MvcApiResource resource) {
 		if (resourceListCache.containsKey(resource.getControllerClass()))
 			return;
-		
+
 		DocumentationEndPoint endpoint = resource.describeAsEndpoint();
 		if (endpoint != null)
 		{
@@ -82,22 +82,23 @@ public class MvcApiReader {
 		for (Entry<RequestMappingInfo, HandlerMethod> entry : handlerMapping.getHandlerMethods().entrySet()) {
 			HandlerMethod handlerMethod = entry.getValue();
 			RequestMappingInfo mappingInfo = entry.getKey();
-			
+
 			MvcApiResource resource = new MvcApiResource(handlerMethod,config);
-			
-			// Don't document our own controllers
-			if (resource.isInternalResource())
+
+			// Don't document which has no @Api
+			if (!resource.isDocumentable()){
 				continue;
-			
+			}
+
 			addApiListingIfMissing(resource);
-			
+
 			ControllerDocumentation apiDocumentation = getApiDocumentation(resource);
 
 			for (String requestUri : mappingInfo.getPatternsCondition().getPatterns())
 			{
 				DocumentationEndPoint endPoint = apiDocumentation.getEndPoint(requestUri);
 				appendOperationsToEndpoint(mappingInfo,handlerMethod,endPoint);
-				
+
 			}
 		}
 	}
@@ -115,7 +116,7 @@ public class MvcApiReader {
 	private void appendOperationsToEndpoint(
 			RequestMappingInfo mappingInfo, HandlerMethod handlerMethod, DocumentationEndPoint endPoint) {
 		ApiMethodReader methodDoc = new ApiMethodReader(handlerMethod);
-		
+
 		if (mappingInfo.getMethodsCondition().getMethods().isEmpty())
 		{
 			// no methods have been specified, it means the endpoint is accessible for all methods
@@ -126,7 +127,7 @@ public class MvcApiReader {
 			appendOperationsToEndpoint( methodDoc,endPoint, mappingInfo.getMethodsCondition().getMethods() );
 		}
 	}
-	
+
 	private void appendOperationsToEndpoint(ApiMethodReader methodDoc, DocumentationEndPoint endPoint,
                                             Collection<RequestMethod> methods)
 	{
@@ -139,7 +140,7 @@ public class MvcApiReader {
 
 	public ControllerDocumentation getDocumentation(
 			String apiName) {
-		
+
 		for (ControllerDocumentation documentation : apiCache.values())
 		{
 			if (documentation.matchesName(apiName))
@@ -148,4 +149,5 @@ public class MvcApiReader {
 		log.error("Could not find a matching resource for api with name '" + apiName + "'");
 		return null;
 	}
+
 }
